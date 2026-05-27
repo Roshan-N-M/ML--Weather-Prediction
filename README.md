@@ -1,67 +1,76 @@
-# Implementation of Univariate Linear Regression
+# Implementation of Random Forest Algorithm for Weather Prediction
 ## AIM:
-To implement univariate Linear Regression to fit a straight line using least squares.
+To write a program to predict daily temperature , PM2.5 pollution level and Energy based on environmental sensor data using Random Forest Algorithm.
+
+## Problem Statement and Dataset
+
+
 
 ## Equipments Required:
 1. Hardware – PCs
 2. Anaconda – Python 3.7 Installation / Jupyter notebook
 
 ## Algorithm
-1. Get the independent variable X and dependent variable Y.
-2. Calculate the mean of the X -values and the mean of the Y -values.
-3. Find the slope m of the line of best fit using the formula. 
-<img width="231" alt="image" src="https://user-images.githubusercontent.com/93026020/192078527-b3b5ee3e-992f-46c4-865b-3b7ce4ac54ad.png">
-4. Compute the y -intercept of the line by using the formula:
-<img width="148" alt="image" src="https://user-images.githubusercontent.com/93026020/192078545-79d70b90-7e9d-4b85-9f8b-9d7548a4c5a4.png">
-5. Use the slope m and the y -intercept to form the equation of the line.
-6. Obtain the straight line equation Y=mX+b and plot the scatterplot.
+1.Collect weather dataset (temperature, humidity, wind, pressure, etc.)
+
+2.Preprocess data (handle missing values, encoding, scaling if needed)
+
+3.Split dataset into training and testing sets
+
+4.Create multiple decision trees using bootstrapped samples
 
 ## Program:
 ```
 /*
-Program to implement univariate Linear Regression to fit a straight line using least squares.
-Developed by: Roshan N M
-RegisterNumber:  212225040349
+Program to implement the Random Forest Algorithm to predict daily temperature , PM2.5 pollution level and Energy based on environmental sensor data.
+Developed by:BHARATH V 
+RegisterNumber: 212225220017 
 */
-```
-```
+import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
+from sklearn.ensemble import RandomForestRegressor
+import joblib
+# Load dataset
+df = pd.read_csv("weather-station-eee-block_2024_07_13.csv")
+df.columns = df.columns.str.strip()
+df['time'] = pd.to_datetime(df['time'], errors='coerce')
+print("Original rows:", len(df))
+# Only drop if target missing
+df = df.dropna(subset=['tem', 'pm2_5'])
+# Fill feature columns instead of dropping
+df['hum'] = df['hum'].fillna(df['hum'].mean())
+df['pressure'] = df['pressure'].fillna(df['pressure'].mean())
+df['wind_speed'] = df['wind_speed'].fillna(df['wind_speed'].mean())
+df['co2'] = df['co2'].fillna(df['co2'].mean())
+# Sort by time
+df = df.sort_values('time')
 
-#Prepocessing input data
-X=np.array(eval(input()))
-Y=np.array(eval(input()))
-#Mean
-X_mean=np.mean(X)
-Y_mean=np.mean(Y)
-num=0
-denom=0
+# Create lag features
+df['Temp_Lag1'] = df['tem'].shift(1)
+df['PM_Lag1'] = df['pm2_5'].shift(1)
+# Only remove first row created by shift
+df = df.iloc[1:]
+print("Rows after preprocessing:", len(df))
+# Features
+X = df[['hum', 'pressure', 'wind_speed', 'co2',
+'Temp_Lag1', 'PM_Lag1']]
+y_temp = df['tem']
+y_pm = df['pm2_5']
+print("Training samples:", len(X))
+# Train models
+model_temp = RandomForestRegressor(n_estimators=300, random_state=42)
+model_pm = RandomForestRegressor(n_estimators=300, random_state=42)
+model_temp.fit(X, y_temp)
+model_pm.fit(X, y_pm)
+# Save models
+joblib.dump(model_temp, "temperature_model.pkl")
+joblib.dump(model_pm, "pm25_model.pkl")
+print("Models trained and saved successfully!")
 
-#to find sum of (xi-x') & (yi-y') & (xi-x')^2
-for i in range(len(X)):
-    num+=(X[i]-X_mean)*(Y[i]-Y_mean)
-    denom+=(X[i]-X_mean)**2
-m=num/denom
-b=Y_mean-(m*X_mean)
-print(m,b)
-Y_predicted = m*X+b
-print(Y_predicted)
-plt.scatter(X,Y)
-plt.plot(X,Y_predicted,color="red")
-plt.show()
 ```
 
 ## Output:
-
-
-```
-8,2,11,6,5,4,12,9,6,1
-3,10,3,6,8,12,1,4,9,14
--1.1064189189189189 14.08108108108108
-[ 5.22972973 11.86824324  1.91047297  7.44256757  8.54898649  9.65540541
-  0.80405405  4.12331081  7.44256757 12.97466216]
-```
-<img width="500" height="380" alt="image" src="https://github.com/user-attachments/assets/5efc49be-40f9-4a9f-8c0b-f016445d28cb" />
+<img width="1272" height="97" alt="image" src="https://github.com/user-attachments/assets/16667302-2de2-4dc3-aaae-19a1bcfce96f" />
 
 ## Result:
-Thus the univariate Linear Regression was implemented to fit a straight line using least squares using python programming.
+Random Forest gives a more accurate and reliable weather prediction by combining multiple decision trees and taking the final aggregated result.
